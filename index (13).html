@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ToF 2 - True or False Kamera</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--g:#22c55e;--r:#ef4444;--p:#7c3aed;--y:#fbbf24;--b:#06b6d4}
+*{box-sizing:border-box;margin:0;font-family:'Segoe UI',system-ui,sans-serif}
+body{min-height:100vh;background:linear-gradient(135deg,#7c3aed,#ec4899,#f97316,#06b6d4);background-size:400% 400%;animation:bg 14s ease infinite;color:#1e1b4b;display:flex;flex-direction:column;align-items:center;padding:14px}
+@keyframes bg{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+h1{font-size:clamp(2.2rem,7vw,4rem);color:#fff;text-shadow:0 4px 0 #4c1d95,0 8px 18px #0004;letter-spacing:2px}
+h1 span{color:var(--y)}
+.sub{color:#fff;font-weight:600;margin-bottom:12px}
+.card{background:#fffffff2;border-radius:22px;padding:18px;width:100%;max-width:820px;box-shadow:0 10px 30px #0003;margin-bottom:14px}
+.hide{display:none!important}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tab{flex:1;min-width:110px;padding:9px;border:0;border-radius:12px;background:#e9d5ff;font-weight:700;cursor:pointer}
+.tab.on{background:var(--p);color:#fff}
+textarea,input[type=text],input[type=number],select{width:100%;padding:10px;border-radius:12px;border:2px solid #c4b5fd;font-size:1rem}
+textarea{min-height:110px}
+.btn{border:0;border-radius:14px;padding:11px 20px;font-weight:800;font-size:1rem;color:#fff;cursor:pointer;background:linear-gradient(135deg,#7c3aed,#ec4899);box-shadow:0 4px 0 #4c1d95;margin:4px 2px}
+.btn:active{transform:translateY(3px);box-shadow:none}
+.btn.g{background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 0 #166534}
+.btn.r{background:linear-gradient(135deg,#dc2626,#f97316);box-shadow:0 4px 0 #7f1d1d}
+.btn.s{padding:6px 12px;font-size:.85rem}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>div{flex:1;min-width:140px}
+label{font-weight:700;font-size:.9rem}
+.hint{font-size:.82rem;color:#6b21a8;margin:6px 0}
+.q-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;margin:4px 0;background:#f5f3ff;font-size:.92rem}
+.q-item b{padding:2px 9px;border-radius:8px;color:#fff;font-size:.75rem}
+.q-item .t{background:var(--g)}.q-item .f{background:var(--r)}
+.q-item span{flex:1}
+#stage{position:relative;width:100%;max-width:820px;aspect-ratio:4/3;border-radius:22px;overflow:hidden;background:#111;box-shadow:0 10px 30px #0005}
+video,#fx{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+video{transform:scaleX(-1)}
+.zone{position:absolute;top:0;bottom:0;width:50%;display:flex;align-items:flex-end;justify-content:center;padding-bottom:16px;font-size:clamp(1.6rem,6vw,3rem);font-weight:900;color:#fff;text-shadow:0 3px 8px #000a;transition:.2s;pointer-events:none}
+#zl{left:0;background:#22c55e44;border-right:3px dashed #fff}
+#zr{right:0;background:#ef444444}
+.zone.act{background:#22c55eaa}#zr.act{background:#ef4444aa}
+#hud{position:absolute;top:0;left:0;right:0;padding:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;pointer-events:none}
+.pill{background:#000a;color:#fff;border-radius:999px;padding:6px 14px;font-weight:800}
+#qbox{position:absolute;top:52px;left:50%;transform:translateX(-50%);width:92%;background:#fffffff0;border-radius:18px;padding:12px 16px;text-align:center;font-weight:800;font-size:clamp(1rem,3.2vw,1.7rem);box-shadow:0 6px 18px #0006}
+#bar{position:absolute;bottom:0;left:0;height:10px;background:linear-gradient(90deg,var(--y),#f97316);width:100%}
+#big{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(4rem,20vw,10rem);font-weight:900;color:#fff;text-shadow:0 6px 0 #4c1d95,0 0 30px #000;pointer-events:none}
+.pop{animation:pop .6s}
+@keyframes pop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+.res{text-align:center}.res .big{font-size:3rem;font-weight:900;color:var(--p)}
+.stars{font-size:2.4rem}
+footer{margin-top:auto;padding:14px;color:#fff;font-weight:700;text-align:center;text-shadow:0 2px 6px #0006}
+</style>
+</head>
+<body>
+<h1>ToF <span>2</span> 🎥</h1>
+<div class="sub">True or False pakai Kamera — Kiri ✅ BENAR • Kanan ❌ SALAH</div>
+
+<!-- SETUP -->
+<div id="setup" class="card">
+ <h3>📚 1. Masukkan Soal (wajib)</h3>
+ <div class="tabs" id="tabs">
+  <button class="tab on" data-t="manual">✍️ Manual</button>
+  <button class="tab" data-t="json">🧾 File JSON</button>
+  <button class="tab" data-t="sheet">📊 Spreadsheet/Excel</button>
+  <button class="tab" data-t="ai">🤖 Generate AI</button>
+ </div>
+ <div id="p-manual">
+  <input type="text" id="mq" placeholder="Tulis pernyataan, contoh: Matahari terbit dari timur">
+  <div style="margin:8px 0"><select id="ma"><option value="1">✅ Jawaban: BENAR</option><option value="0">❌ Jawaban: SALAH</option></select></div>
+  <button class="btn g" onclick="addManual()">+ Tambah Soal</button>
+ </div>
+ <div id="p-json" class="hide">
+  <input type="file" id="fjson" accept=".json,application/json">
+  <p class="hint">Format: <code>[{"soal":"Ikan bernapas dengan insang","jawaban":"benar"}]</code> (jawaban: benar/salah/true/false)</p>
+ </div>
+ <div id="p-sheet" class="hide">
+  <input type="file" id="fsheet" accept=".xlsx,.xls,.csv">
+  <p class="hint">Kolom A = soal, kolom B = jawaban (benar/salah). Baris pertama boleh judul. Untuk Google Sheets: File → Download → .xlsx / .csv.</p>
+ </div>
+ <div id="p-ai" class="hide">
+  <div class="row"><div><label>Topik / Mapel</label><input type="text" id="aitopic" placeholder="mis. Sistem Tata Surya kelas 6"></div>
+  <div><label>Jumlah soal</label><input type="number" id="ainum" value="10" min="1" max="100"></div></div>
+  <button class="btn" onclick="copyPrompt()">📋 Salin Prompt untuk Gemini / ChatGPT / dll</button>
+  <p class="hint">Tempel prompt ke AI favoritmu, lalu salin hasil JSON-nya dan tempel di bawah.</p>
+  <textarea id="aijson" placeholder="Tempel hasil JSON dari AI di sini..."></textarea>
+  <button class="btn g" onclick="importAI()">⬇️ Impor Hasil AI</button>
+ </div>
+ <div style="margin-top:10px"><b>Daftar soal: <span id="cnt">0</span></b>
+  <button class="btn r s" onclick="Q=[];render()">Hapus semua</button>
+  <div id="list" style="max-height:200px;overflow:auto"></div></div>
+ <hr style="margin:14px 0;border:1px dashed #c4b5fd">
+ <h3>⚙️ 2. Pengaturan</h3>
+ <div class="row">
+  <div><label>⏱️ Waktu per soal (detik)</label><input type="number" id="stime" value="10" min="3" max="120"></div>
+  <div><label>🔢 Jumlah soal main</label><input type="number" id="snum" value="10" min="1"></div>
+  <div><label>🔀 Acak soal</label><select id="shuf"><option value="1">Ya</option><option value="0">Tidak</option></select></div>
+ </div>
+ <p class="hint">Saat mulai: kamera menyala → <b>keluar dari layar</b> 3 detik untuk kalibrasi latar → masuk & berdiri di sisi kiri (BENAR) atau kanan (SALAH). Jawaban dikunci saat waktu habis.</p>
+ <button class="btn g" style="width:100%;font-size:1.2rem" onclick="start()">🚀 MULAI BERMAIN</button>
+ <button class="btn" style="width:100%" onclick="start(true)">⌨️ Mode Tanpa Kamera (tombol ← / →)</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="hide" style="width:100%;max-width:820px">
+ <div id="stage">
+  <video id="vid" autoplay muted playsinline></video>
+  <canvas id="fx"></canvas>
+  <div class="zone" id="zl">✅ BENAR</div><div class="zone" id="zr">❌ SALAH</div>
+  <div id="hud"><div class="pill" id="hq">1/10</div><div class="pill" id="ht">⏱ 10</div><div class="pill" id="hs">⭐ 0</div></div>
+  <div id="qbox" class="hide"></div>
+  <div id="big"></div>
+  <div id="bar"></div>
+ </div>
+ <div style="text-align:center;margin-top:8px"><button class="btn r s" onclick="stopGame()">⏹ Berhenti</button></div>
+</div>
+
+<!-- RESULT -->
+<div id="result" class="card res hide"></div>
+
+<footer>🦈 Developer: SharkArt.evo Education © 2026</footer>
+
+<script>
+let Q=[],play=[],idx=0,score=0,stream=null,base=null,cam=true,timer=null,raf=null,side=null,state='idle';
+const $=id=>document.getElementById(id);
+const W=64,H=48,cv=document.createElement('canvas');cv.width=W;cv.height=H;const cx=cv.getContext('2d',{willReadFrequently:true});
+
+// ---------- INPUT SOAL ----------
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+ ['manual','json','sheet','ai'].forEach(t=>$('p-'+t).classList.toggle('hide',t!==b.dataset.t));
+});
+function render(){
+ $('cnt').textContent=Q.length;$('snum').max=Q.length||1;
+ $('list').innerHTML=Q.map((x,i)=>`<div class="q-item"><b class="${x.a?'t':'f'}">${x.a?'BENAR':'SALAH'}</b><span>${esc(x.q)}</span><button class="btn r s" onclick="Q.splice(${i},1);render()">✕</button></div>`).join('');
+}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function parseAns(v){const s=String(v).trim().toLowerCase();
+ if(['benar','true','b','t','1','ya','yes','betul'].includes(s))return true;
+ if(['salah','false','s','f','0','tidak','no'].includes(s))return false;return null}
+function addItems(arr){let n=0;arr.forEach(o=>{
+ const q=o.soal||o.question||o.pernyataan||o.q||o.Soal||o.Question;
+ const a=parseAns(o.jawaban??o.answer??o.a??o.Jawaban??o.Answer);
+ if(q&&a!==null){Q.push({q:String(q),a});n++}});
+ render();alert(n+' soal berhasil ditambahkan'+(n<arr.length?` (${arr.length-n} dilewati karena format salah)`:''))}
+function addManual(){const q=$('mq').value.trim();if(!q)return;Q.push({q,a:$('ma').value==='1'});$('mq').value='';render()}
+$('mq').onkeydown=e=>{if(e.key==='Enter')addManual()};
+$('fjson').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());addItems(Array.isArray(d)?d:(d.soal||d.questions||[]))}catch(x){alert('File JSON tidak valid')}e.target.value=''};
+$('fsheet').onchange=async e=>{try{
+ const wb=XLSX.read(await e.target.files[0].arrayBuffer(),{type:'array'});
+ const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
+ addItems(rows.filter(r=>r[0]!==undefined).map(r=>({soal:r[0],jawaban:r[1]})))}catch(x){alert('Gagal membaca file spreadsheet')}e.target.value=''};
+function copyPrompt(){
+ const t=$('aitopic').value||'pengetahuan umum',n=$('ainum').value||10;
+ const p=`Buatkan ${n} soal Benar/Salah tentang "${t}". Jumlah soal benar dan salah harus seimbang. Balas HANYA dengan JSON array tanpa teks lain, format persis:\n[{"soal":"pernyataan","jawaban":"benar"},{"soal":"pernyataan","jawaban":"salah"}]`;
+ navigator.clipboard.writeText(p).then(()=>alert('Prompt disalin! Tempel ke Gemini/ChatGPT.'),()=>prompt('Salin prompt ini:',p))}
+function importAI(){try{
+ const t=$('aijson').value.replace(/```json|```/g,'').trim();
+ const d=JSON.parse(t.slice(t.indexOf('['),t.lastIndexOf(']')+1));addItems(d);$('aijson').value=''}catch(x){alert('JSON dari AI tidak valid. Pastikan hanya array JSON.')}}
+
+// ---------- GAME ----------
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function start(nocam){
+ if(!Q.length)return alert('Masukkan soal terlebih dahulu!');
+ const n=Math.min(Math.max(1,+$('snum').value||10),Q.length);
+ play=Q.slice();if($('shuf').value==='1')play.sort(()=>Math.random()-.5);play=play.slice(0,n);
+ idx=0;score=0;cam=!nocam;
+ $('setup').classList.add('hide');$('result').classList.add('hide');$('game').classList.remove('hide');
+ $('vid').style.display=cam?'block':'none';$('stage').style.background=cam?'#111':'linear-gradient(135deg,#1e1b4b,#7c3aed)';
+ if(cam){
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:false});$('vid').srcObject=stream;await $('vid').play()}
+  catch(e){alert('Kamera tidak bisa diakses. Beralih ke mode tombol ← / →.');cam=false;$('vid').style.display='none'}
+ }
+ state='run';
+ if(cam){
+  for(let i=5;i>0&&state==='run';i--){big('🚶 Keluar layar! '+i,true);await sleep(1000)}
+  if(state!=='run')return;captureBase();
+  for(let i=3;i>0&&state==='run';i--){big('Masuk! '+i);await sleep(1000)}
+ }else{for(let i=3;i>0&&state==='run';i--){big(i);await sleep(900)}}
+ if(state!=='run')return;big('');loop();nextQ();
+}
+function big(t,small){const b=$('big');b.style.fontSize=small?'clamp(1.6rem,6vw,3rem)':'';b.textContent=t;b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')}
+function frame(){cx.drawImage($('vid'),0,0,W,H);return cx.getImageData(0,0,W,H).data}
+function captureBase(){const d=frame();base=new Float32Array(W*H);for(let i=0;i<W*H;i++)base[i]=(d[i*4]+d[i*4+1]+d[i*4+2])/3}
+let L=0,R=0;
+function analyze(){
+ if(!cam||!base)return;
+ const d=frame();let l=0,r=0;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x,g=(d[i*4]+d[i*4+1]+d[i*4+2])/3;
+  if(Math.abs(g-base[i])>38){(W-1-x)<W/2?l++:r++}} // video dicerminkan: kiri layar = kiri pemain
+ L=l;R=r;const min=W*H*0.025;
+ side=(l<min&&r<min)?null:(l>r?'L':'R');
+}
+function loop(){
+ analyze();
+ $('zl').classList.toggle('act',side==='L');$('zr').classList.toggle('act',side==='R');
+ // gambar overlay deteksi
+ const c=$('fx'),s=$('stage');if(c.width!==s.clientWidth){c.width=s.clientWidth;c.height=s.clientHeight}
+ const g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);
+ if(cam&&state==='ask'){g.fillStyle='#fff';g.font='bold 16px sans-serif';g.textAlign='center';g.fillText(side?(side==='L'?'Terdeteksi: KIRI':'Terdeteksi: KANAN'):'Belum terdeteksi — masuk ke layar!',c.width/2,c.height-30)}
+ raf=requestAnimationFrame(loop);
+}
+document.addEventListener('keydown',e=>{if(!cam&&state==='ask'){if(e.key==='ArrowLeft')side='L';if(e.key==='ArrowRight')side='R'}});
+function nextQ(){
+ if(idx>=play.length)return finish();
+ const q=play[idx],T=Math.max(3,+$('stime').value||10);
+ side=cam?null:side;state='ask';
+ $('qbox').textContent=q.q;$('qbox').classList.remove('hide');
+ $('hq').textContent=`📝 ${idx+1}/${play.length}`;$('hs').textContent='⭐ '+score;big('');
+ const t0=performance.now();
+ clearInterval(timer);
+ timer=setInterval(()=>{
+  const left=T-(performance.now()-t0)/1000;
+  $('ht').textContent='⏱ '+Math.max(0,Math.ceil(left));$('bar').style.width=Math.max(0,left/T*100)+'%';
+  if(left<=0){clearInterval(timer);judge(q)}
+ },100);
+}
+async function judge(q){
+ state='judge';const ans=side==='L'?true:side==='R'?false:null;
+ let msg;
+ if(ans===null)msg='😴 Tidak menjawab';
+ else if(ans===q.a){score+=10;msg='🎉 BENAR! +10'}
+ else msg='💥 Salah!';
+ $('hs').textContent='⭐ '+score;
+ $('qbox').textContent='Jawaban: '+(q.a?'✅ BENAR':'❌ SALAH');
+ big(msg,true);await sleep(2000);
+ if(state==='judge'){idx++;nextQ()}
+}
+function stopGame(){state='idle';clearInterval(timer);cancelAnimationFrame(raf);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+ $('game').classList.add('hide');$('qbox').classList.add('hide');$('setup').classList.remove('hide')}
+function finish(){
+ const total=play.length*10,pct=Math.round(score/total*100);
+ const stars=pct>=90?'⭐⭐⭐':pct>=60?'⭐⭐':pct>=30?'⭐':'💪';
+ stopGame();$('setup').classList.add('hide');$('result').classList.remove('hide');
+ $('result').innerHTML=`<div class="stars">${stars}</div><h2>Permainan Selesai!</h2><div class="big">${score} / ${total}</div><p>Akurasi ${pct}% — ${pct>=60?'Hebat sekali! 🎊':'Ayo coba lagi! 🔥'}</p>
+ <button class="btn g" onclick="$('result').classList.add('hide');start(${!cam})">🔁 Main Lagi</button>
+ <button class="btn" onclick="$('result').classList.add('hide');$('setup').classList.remove('hide')">🏠 Menu Soal</button>`;
+}
+render();
+</script>
+</body>
+</html>
