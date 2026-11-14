@@ -90,7 +90,9 @@ footer{margin-top:auto;padding:14px;color:#fff;font-weight:700;text-align:center
  </div>
  <div style="margin-top:10px"><b>Daftar soal: <span id="cnt">0</span></b>
   <button class="btn r s" onclick="Q=[];render()">Hapus semua</button>
-  <div id="list" style="max-height:200px;overflow:auto"></div></div>
+  <button class="btn s" id="tg" onclick="toggleList()">👁️ Tampilkan Soal</button>
+  <p class="hint" id="lock">🔒 Daftar soal disembunyikan demi kerahasiaan. Klik "Tampilkan Soal" untuk melihatnya.</p>
+  <div id="list" class="hide" style="max-height:200px;overflow:auto"></div></div>
 <hr style="margin:14px 0;border:1px dashed #c4b5fd">
  <h3>🗄️ Bank Soal (Database per Kelas &amp; Mapel)</h3>
  <div class="row">
@@ -148,6 +150,9 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');
  ['manual','json','sheet','ai'].forEach(t=>$('p-'+t).classList.toggle('hide',t!==b.dataset.t));
 });
+function toggleList(force){const show=force!==undefined?force:$('list').classList.contains('hide');
+ $('list').classList.toggle('hide',!show);$('lock').classList.toggle('hide',show);
+ $('tg').textContent=show?'🙈 Sembunyikan Soal':'👁️ Tampilkan Soal'}
 function render(){
  $('cnt').textContent=Q.length;$('snum').max=Q.length||1;
  $('list').innerHTML=Q.map((x,i)=>`<div class="q-item"><b class="${x.a?'t':'f'}">${x.a?'BENAR':'SALAH'}</b><span>${esc(x.q)} ${x.k?`<small>[Kls ${esc(x.k)}${x.m?' · '+esc(x.m):''}]</small>`:''}</span><button class="btn r s" onclick="Q.splice(${i},1);render()">✕</button></div>`).join('');
@@ -180,6 +185,7 @@ function importAI(){try{
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function start(nocam){
  if(!Q.length)return alert('Masukkan soal terlebih dahulu!');
+ toggleList(false);
  const n=Math.min(Math.max(1,+$('snum').value||10),Q.length);
  play=Q.slice();if($('shuf').value==='1')play.sort(()=>Math.random()-.5);play=play.slice(0,n);
  idx=0;score=0;cam=!nocam;
@@ -245,7 +251,7 @@ async function judge(q){
  if(state==='judge'){idx++;nextQ()}
 }
 function fs(){const s=$('stage');document.fullscreenElement?document.exitFullscreen():(s.requestFullscreen&&s.requestFullscreen())}
-function stopGame(){state='idle';document.body.classList.remove('playing');if(document.fullscreenElement)document.exitFullscreen();clearInterval(timer);cancelAnimationFrame(raf);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+function stopGame(){toggleList(false);state='idle';document.body.classList.remove('playing');if(document.fullscreenElement)document.exitFullscreen();clearInterval(timer);cancelAnimationFrame(raf);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
  $('game').classList.add('hide');$('qbox').classList.add('hide');$('setup').classList.remove('hide')}
 function finish(){
  const total=play.length*10,pct=Math.round(score/total*100);
