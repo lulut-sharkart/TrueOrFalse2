@@ -49,7 +49,11 @@ video{transform:scaleX(-1)}
 .playing h1,.playing .sub{display:none}.playing{padding:6px}
 #stage:fullscreen{max-width:none;aspect-ratio:auto;border-radius:0}
 .q-item small{color:#6b21a8;font-weight:700}
-.res{text-align:center}.res .big{font-size:3rem;font-weight:900;color:var(--p)}
+.res{text-align:center}
+body:not(.admin) .adm{display:none!important}
+dialog{border:0;border-radius:20px;padding:18px;width:min(520px,92vw);box-shadow:0 20px 60px #0007}
+dialog::backdrop{background:#0008}
+.row3>div{min-width:110px}.res .big{font-size:3rem;font-weight:900;color:var(--p)}
 .stars{font-size:2.4rem}
 footer{margin-top:auto;padding:14px;color:#fff;font-weight:700;text-align:center;text-shadow:0 2px 6px #0006}
 </style>
@@ -60,6 +64,7 @@ footer{margin-top:auto;padding:14px;color:#fff;font-weight:700;text-align:center
 
 <!-- SETUP -->
 <div id="setup" class="card">
+ <div style="text-align:right"><button class="btn s" id="adbtn" onclick="adminToggle()">🔐 Mode Admin</button></div>
  <h3>📚 1. Masukkan Soal (wajib)</h3>
  <div class="tabs" id="tabs">
   <button class="tab on" data-t="manual">✍️ Manual</button>
@@ -74,11 +79,11 @@ footer{margin-top:auto;padding:14px;color:#fff;font-weight:700;text-align:center
  </div>
  <div id="p-json" class="hide">
   <input type="file" id="fjson" accept=".json,application/json">
-  <p class="hint">Format: <code>[{"soal":"Ikan bernapas dengan insang","jawaban":"benar","kelas":"4","mapel":"IPA"}]</code> (kelas &amp; mapel opsional)</p>
+  <p class="hint">Format: <code>[{"soal":"Ikan bernapas dengan insang","jawaban":"benar","kelas":"4","mapel":"IPA","materi":"Sistem Tata Surya"}]</code> (kelas, mapel, materi opsional)</p>
  </div>
  <div id="p-sheet" class="hide">
   <input type="file" id="fsheet" accept=".xlsx,.xls,.csv">
-  <p class="hint">Kolom A = soal, B = jawaban (benar/salah), C = kelas (opsional), D = mapel (opsional). Baris pertama boleh judul. Untuk Google Sheets: File → Download → .xlsx / .csv.</p>
+  <p class="hint">Kolom A = soal, B = jawaban (benar/salah), C = kelas, D = mapel, E = materi (C–E opsional). Baris pertama boleh judul. Untuk Google Sheets: File → Download → .xlsx / .csv.</p>
  </div>
  <div id="p-ai" class="hide">
   <div class="row"><div><label>Topik / Mapel</label><input type="text" id="aitopic" placeholder="mis. Sistem Tata Surya kelas 6"></div>
@@ -94,21 +99,31 @@ footer{margin-top:auto;padding:14px;color:#fff;font-weight:700;text-align:center
   <p class="hint" id="lock">🔒 Daftar soal disembunyikan demi kerahasiaan. Klik "Tampilkan Soal" untuk melihatnya.</p>
   <div id="list" class="hide" style="max-height:200px;overflow:auto"></div></div>
 <hr style="margin:14px 0;border:1px dashed #c4b5fd">
- <h3>🗄️ Bank Soal (Database per Kelas &amp; Mapel)</h3>
- <div class="row">
+ <h3>🗄️ Bank Soal (Database per Kelas, Mapel &amp; Materi)</h3>
+ <div class="row row3">
   <div><label>Kelas</label><select id="bk"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>Umum</option></select></div>
-  <div><label>Mapel</label><input type="text" id="bm" list="ml" placeholder="mis. IPA, Matematika"><datalist id="ml"></datalist></div>
+  <div><label>Mapel</label><input type="text" id="bm" list="ml" placeholder="mis. IPA"><datalist id="ml"></datalist></div>
+  <div><label>Materi</label><input type="text" id="bt" list="tl" placeholder="mis. Tata Surya"><datalist id="tl"></datalist></div>
  </div>
  <button class="btn g" onclick="saveBank()">💾 Simpan daftar soal ke Bank</button>
- <p class="hint">Semua soal di daftar atas disimpan dengan Kelas &amp; Mapel di sini. Soal dari file yang punya kolom kelas/mapel tetap memakai kategorinya sendiri.</p>
- <div class="row">
+ <p class="hint">Jika Kelas, Mapel &amp; Materi sama dengan kategori yang sudah ada, soal otomatis <b>ditambahkan</b> ke kategori itu (soal kembar dilewati). Soal dari file yang punya kolom kelas/mapel/materi memakai kategorinya sendiri.</p>
+ <div class="row row3">
   <div><label>Filter Kelas</label><select id="fk" onchange="renderBank()"></select></div>
   <div><label>Filter Mapel</label><select id="fm" onchange="renderBank()"></select></div>
+  <div><label>Filter Materi</label><select id="ft" onchange="renderBank()"></select></div>
  </div>
  <div id="bank" style="max-height:180px;overflow:auto;margin:6px 0"></div>
  <button class="btn" onclick="loadBank()">📥 Muat hasil filter ke daftar soal</button>
- <button class="btn s" onclick="exportBank()">⬆️ Ekspor Bank</button>
- <label class="btn s" style="display:inline-block">⬇️ Impor Bank<input type="file" id="fbank" accept=".json" class="hide"></label>
+ <div class="adm" style="margin-top:10px;padding:10px;border-radius:14px;background:#fef3c7">
+  <b>🛡️ Menu Admin</b><br>
+  <button class="btn s" onclick="toggleMgr()">🛠️ Kelola soal bank (edit/hapus)</button>
+  <button class="btn s" onclick="exportJSON()">⬆️ Ekspor semua (JSON)</button>
+  <button class="btn s" onclick="exportXLSX()">📊 Ekspor semua (Excel)</button>
+  <label class="btn s" style="display:inline-block">⬇️ Impor ke bank<input type="file" id="fbank" accept=".json,.xlsx,.xls,.csv" class="hide"></label>
+  <button class="btn s" onclick="changePin()">🔑 Ubah PIN</button>
+  <button class="btn r s" onclick="clearBank()">🗑️ Hapus SEMUA bank</button>
+  <div id="bmgr" class="hide" style="max-height:260px;overflow:auto;margin-top:8px"></div>
+ </div>
  <hr style="margin:14px 0;border:1px dashed #c4b5fd">
  <h3>⚙️ 2. Pengaturan</h3>
  <div class="row">
@@ -138,6 +153,19 @@ footer{margin-top:auto;padding:14px;color:#fff;font-weight:700;text-align:center
 <!-- RESULT -->
 <div id="result" class="card res hide"></div>
 
+<dialog id="dlg">
+ <h3>✏️ Edit Soal</h3>
+ <label>Soal</label><textarea id="eq"></textarea>
+ <div class="row row3" style="margin-top:8px">
+  <div><label>Jawaban</label><select id="ea"><option value="1">✅ BENAR</option><option value="0">❌ SALAH</option></select></div>
+  <div><label>Kelas</label><select id="ek"></select></div>
+ </div>
+ <div class="row row3" style="margin-top:8px">
+  <div><label>Mapel</label><input type="text" id="em" list="ml"></div>
+  <div><label>Materi</label><input type="text" id="et" list="tl"></div>
+ </div>
+ <div style="text-align:right;margin-top:12px"><button class="btn r s" onclick="$('dlg').close()">Batal</button><button class="btn g s" onclick="saveEdit()">💾 Simpan</button></div>
+</dialog>
 <footer>🦈 Developer: SharkArt.evo Education © 2026</footer>
 
 <script>
@@ -155,24 +183,28 @@ function toggleList(force){const show=force!==undefined?force:$('list').classLis
  $('tg').textContent=show?'🙈 Sembunyikan Soal':'👁️ Tampilkan Soal'}
 function render(){
  $('cnt').textContent=Q.length;$('snum').max=Q.length||1;
- $('list').innerHTML=Q.map((x,i)=>`<div class="q-item"><b class="${x.a?'t':'f'}">${x.a?'BENAR':'SALAH'}</b><span>${esc(x.q)} ${x.k?`<small>[Kls ${esc(x.k)}${x.m?' · '+esc(x.m):''}]</small>`:''}</span><button class="btn r s" onclick="Q.splice(${i},1);render()">✕</button></div>`).join('');
+ $('list').innerHTML=Q.map((x,i)=>`<div class="q-item"><b class="${x.a?'t':'f'}">${x.a?'BENAR':'SALAH'}</b><span>${esc(x.q)} ${x.k||x.m||x.t?`<small>[${[x.k?'Kls '+esc(x.k):'',esc(x.m||''),esc(x.t||'')].filter(Boolean).join(' · ')}]</small>`:''}</span><button class="btn s" onclick="editQ(${i})">✏️</button><button class="btn r s" onclick="Q.splice(${i},1);render()">✕</button></div>`).join('');
 }
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function parseAns(v){const s=String(v).trim().toLowerCase();
  if(['benar','true','b','t','1','ya','yes','betul'].includes(s))return true;
  if(['salah','false','s','f','0','tidak','no'].includes(s))return false;return null}
 function addItems(arr){let n=0;arr.forEach(o=>{
- const q=o.soal||o.question||o.pernyataan||o.q||o.Soal||o.Question,kk=o.kelas??o.Kelas??o.k,mm=o.mapel??o.Mapel??o.m;
+ const q=o.soal||o.question||o.pernyataan||o.q||o.Soal||o.Question,kk=o.kelas??o.Kelas??o.k,mm=o.mapel??o.Mapel??o.m,tt=o.materi??o.Materi??o.t;
  const a=parseAns(o.jawaban??o.answer??o.a??o.Jawaban??o.Answer);
- if(q&&a!==null){Q.push({q:String(q),a,k:kk!==undefined&&kk!==''?String(kk):undefined,m:mm?String(mm):undefined});n++}});
+ if(q&&a!==null){Q.push({q:String(q),a,k:kk!==undefined&&kk!==''?String(kk):undefined,m:mm?String(mm):undefined,t:tt?String(tt):undefined});n++}});
  render();alert(n+' soal berhasil ditambahkan'+(n<arr.length?` (${arr.length-n} dilewati karena format salah)`:''))}
 function addManual(){const q=$('mq').value.trim();if(!q)return;Q.push({q,a:$('ma').value==='1'});$('mq').value='';render()}
 $('mq').onkeydown=e=>{if(e.key==='Enter')addManual()};
-$('fjson').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());addItems(Array.isArray(d)?d:(d.soal||d.questions||[]))}catch(x){alert('File JSON tidak valid')}e.target.value=''};
-$('fsheet').onchange=async e=>{try{
- const wb=XLSX.read(await e.target.files[0].arrayBuffer(),{type:'array'});
- const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
- addItems(rows.filter(r=>r[0]!==undefined).map(r=>({soal:r[0],jawaban:r[1],kelas:r[2],mapel:r[3]})))}catch(x){alert('Gagal membaca file spreadsheet')}e.target.value=''};
+async function readAny(f){
+ if(/\.json$/i.test(f.name)){const d=JSON.parse(await f.text());return Array.isArray(d)?d:(d.soal||d.questions||[])}
+ const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+ const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1}).filter(r=>r[0]!==undefined);
+ if(rows.length&&parseAns(rows[0][1])===null)rows.shift();
+ return rows.map(r=>({soal:r[0],jawaban:r[1],kelas:r[2],mapel:r[3],materi:r[4]}));
+}
+$('fjson').onchange=async e=>{try{addItems(await readAny(e.target.files[0]))}catch(x){alert('File JSON tidak valid')}e.target.value=''};
+$('fsheet').onchange=async e=>{try{addItems(await readAny(e.target.files[0]))}catch(x){alert('Gagal membaca file spreadsheet (butuh internet untuk library Excel)')}e.target.value=''};
 function copyPrompt(){
  const t=$('aitopic').value||'pengetahuan umum',n=$('ainum').value||10;
  const p=`Buatkan ${n} soal Benar/Salah tentang "${t}". Jumlah soal benar dan salah harus seimbang. Balas HANYA dengan JSON array tanpa teks lain, format persis:\n[{"soal":"pernyataan","jawaban":"benar"},{"soal":"pernyataan","jawaban":"salah"}]`;
@@ -185,7 +217,7 @@ function importAI(){try{
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function start(nocam){
  if(!Q.length)return alert('Masukkan soal terlebih dahulu!');
- toggleList(false);
+ toggleList(false);adminOff();
  const n=Math.min(Math.max(1,+$('snum').value||10),Q.length);
  play=Q.slice();if($('shuf').value==='1')play.sort(()=>Math.random()-.5);play=play.slice(0,n);
  idx=0;score=0;cam=!nocam;
@@ -262,49 +294,95 @@ function finish(){
  <button class="btn" onclick="$('result').classList.add('hide');$('setup').classList.remove('hide')">🏠 Menu Soal</button>`;
 }
 
-// ---------- BANK SOAL (database lokal di browser) ----------
-let DB=[],CL=[];
-try{DB=JSON.parse(localStorage.getItem('tof2_bank')||'[]')}catch(e){}
-function persist(){try{localStorage.setItem('tof2_bank',JSON.stringify(DB))}catch(e){alert('Penyimpanan browser tidak tersedia. Gunakan Ekspor Bank untuk cadangan.')}}
+// ---------- BANK SOAL (database lokal) + MODE ADMIN ----------
+let DB=[],CL=[],ADM=false,MEM={},EDT=null;
+const lget=k=>{try{return localStorage.getItem(k)}catch(e){return MEM[k]??null}};
+const lset=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){MEM[k]=v;return false}return true};
+try{DB=JSON.parse(lget('tof2_bank')||'[]')}catch(e){DB=[]}
+DB.forEach(x=>{x.t=x.t||''});
+function persist(){if(!lset('tof2_bank',JSON.stringify(DB)))alert('Penyimpanan browser tidak tersedia. Gunakan Ekspor (mode admin) untuk cadangan.')}
 const ko=k=>isNaN(+k)?99:+k;
-function filt(){return DB.filter(x=>($('fk').value==='*'||x.k===$('fk').value)&&($('fm').value==='*'||x.m===$('fm').value))}
+const K=x=>x.k+'||'+x.m+'||'+(x.t||'');
+const opts=(arr,pre)=>arr.map(v=>`<option value="${esc(v)}">${pre?pre+' ':''}${esc(v)}</option>`).join('');
+function filt(){const fk=$('fk').value,fm=$('fm').value,ft=$('ft').value;
+ return DB.filter(x=>(fk==='*'||x.k===fk)&&(fm==='*'||x.m===fm)&&(ft==='*'||(ft==='-'?!x.t:x.t===ft)))}
 function renderBank(){
- const fk=$('fk'),fm=$('fm'),ck=fk.value||'*',cm=fm.value||'*';
+ const fk=$('fk'),fm=$('fm'),ft=$('ft'),ck=fk.value||'*',cm=fm.value||'*',ct=ft.value||'*';
  const ks=[...new Set(DB.map(x=>x.k))].sort((a,b)=>ko(a)-ko(b));
- fk.innerHTML='<option value="*">Semua kelas</option>'+ks.map(k=>`<option value="${esc(k)}">Kelas ${esc(k)}</option>`).join('');
- fk.value=ks.includes(ck)?ck:'*';
- const ms=[...new Set(DB.filter(x=>fk.value==='*'||x.k===fk.value).map(x=>x.m))].sort();
- fm.innerHTML='<option value="*">Semua mapel</option>'+ms.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
- fm.value=ms.includes(cm)?cm:'*';
+ fk.innerHTML='<option value="*">Semua kelas</option>'+opts(ks,'Kelas');fk.value=ks.includes(ck)?ck:'*';
+ const d1=DB.filter(x=>fk.value==='*'||x.k===fk.value),ms=[...new Set(d1.map(x=>x.m))].sort();
+ fm.innerHTML='<option value="*">Semua mapel</option>'+opts(ms);fm.value=ms.includes(cm)?cm:'*';
+ const d2=d1.filter(x=>fm.value==='*'||x.m===fm.value),ts=[...new Set(d2.filter(x=>x.t).map(x=>x.t))].sort(),noT=d2.some(x=>!x.t);
+ ft.innerHTML='<option value="*">Semua materi</option>'+opts(ts)+(noT?'<option value="-">(Tanpa materi)</option>':'');
+ ft.value=(ts.includes(ct)||(ct==='-'&&noT))?ct:'*';
  $('ml').innerHTML=[...new Set(DB.map(x=>x.m))].map(m=>`<option value="${esc(m)}">`).join('');
- const c={};filt().forEach(x=>{const k=x.k+'||'+x.m;c[k]=(c[k]||0)+1});
- CL=Object.entries(c).map(([k,n])=>[...k.split('||'),n]).sort((a,b)=>ko(a[0])-ko(b[0])||a[1].localeCompare(b[1]));
- $('bank').innerHTML=CL.length?CL.map((r,i)=>`<div class="q-item"><b class="t">Kelas ${esc(r[0])}</b><span>${esc(r[1])} — ${r[2]} soal</span><button class="btn r s" onclick="delCat(${i})">🗑️</button></div>`).join(''):'<p class="hint">Bank masih kosong. Tambahkan soal lalu klik "Simpan daftar soal ke Bank".</p>';
+ $('tl').innerHTML=[...new Set(DB.filter(x=>x.t).map(x=>x.t))].map(m=>`<option value="${esc(m)}">`).join('');
+ const c={};filt().forEach(x=>{c[K(x)]=(c[K(x)]||0)+1});
+ CL=Object.entries(c).map(([k,n])=>[...k.split('||'),n]).sort((a,b)=>ko(a[0])-ko(b[0])||a[1].localeCompare(b[1])||a[2].localeCompare(b[2]));
+ $('bank').innerHTML=CL.length?CL.map((r,i)=>`<div class="q-item"><b class="t">Kelas ${esc(r[0])}</b><span>${esc(r[1])}${r[2]?' › '+esc(r[2]):''} — ${r[3]} soal</span>${ADM?`<button class="btn r s" onclick="delCat(${i})">🗑️</button>`:''}</div>`).join(''):'<p class="hint">Bank masih kosong / tidak ada hasil. Tambahkan soal lalu klik "Simpan daftar soal ke Bank".</p>';
+ renderMgr();
 }
 function saveBank(){
  if(!Q.length)return alert('Daftar soal masih kosong.');
- const k=$('bk').value,m=$('bm').value.trim();
+ const k=$('bk').value,m=$('bm').value.trim(),t=$('bt').value.trim();
  if(Q.some(x=>!x.m)&&!m)return alert('Isi Mapel terlebih dahulu.');
- let n=0;Q.forEach(x=>{const kk=x.k||k,mm=x.m||m;
-  if(!DB.some(d=>d.k===kk&&d.m===mm&&d.q===x.q)){DB.push({k:kk,m:mm,q:x.q,a:x.a});n++}});
- persist();renderBank();alert(n+' soal baru disimpan ke bank'+(n<Q.length?` (${Q.length-n} sudah ada)`:''));
+ let n=0;const keys={},had={};
+ Q.forEach(x=>{const it={k:x.k||k,m:x.m||m,t:x.t||t,q:x.q,a:x.a},key=K(it);
+  if(!(key in had))had[key]=DB.some(d=>K(d)===key);
+  keys[key]=1;if(!DB.some(d=>K(d)===key&&d.q===x.q)){DB.push(it);n++}});
+ persist();renderBank();
+ const ks=Object.keys(keys);let msg=n+' soal baru disimpan'+(n<Q.length?` (${Q.length-n} sudah ada, dilewati)`:'')+'.';
+ if(ks.length===1){const [kk,mm,tt]=ks[0].split('||');
+  msg+=`\n${had[ks[0]]?'Ditambahkan ke kategori yang sudah ada':'Kategori baru dibuat'}: Kelas ${kk} › ${mm}${tt?' › '+tt:''} (total ${DB.filter(d=>K(d)===ks[0]).length} soal).`}
+ alert(msg);
 }
 function loadBank(){
  const f=filt();if(!f.length)return alert('Tidak ada soal pada filter ini.');
- let n=0;f.forEach(x=>{if(!Q.some(y=>y.q===x.q)){Q.push({q:x.q,a:x.a,k:x.k,m:x.m});n++}});
+ let n=0;f.forEach(x=>{if(!Q.some(y=>y.q===x.q)){Q.push({q:x.q,a:x.a,k:x.k,m:x.m,t:x.t||undefined});n++}});
  render();alert(n+' soal dimuat ke daftar soal.');
 }
-function delCat(i){const r=CL[i];if(!confirm(`Hapus semua soal Kelas ${r[0]} - ${r[1]} dari bank?`))return;
- DB=DB.filter(x=>!(x.k===r[0]&&x.m===r[1]));persist();renderBank()}
-function exportBank(){
- if(!DB.length)return alert('Bank masih kosong.');
- const b=new Blob([JSON.stringify(DB.map(x=>({kelas:x.k,mapel:x.m,soal:x.q,jawaban:x.a?'benar':'salah'})),null,1)],{type:'application/json'});
- const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='tof2-bank-soal.json';a.click();
+// ----- edit soal -----
+function openEdit(o,cb){EDT={o,cb};$('ek').innerHTML='<option value="">—</option>'+$('bk').innerHTML;
+ $('eq').value=o.q;$('ea').value=o.a?'1':'0';$('ek').value=o.k||'';$('em').value=o.m||'';$('et').value=o.t||'';$('dlg').showModal()}
+function saveEdit(){const q=$('eq').value.trim();if(!q)return alert('Soal tidak boleh kosong.');
+ const o=EDT.o;o.q=q;o.a=$('ea').value==='1';o.k=$('ek').value||undefined;o.m=$('em').value.trim()||undefined;o.t=$('et').value.trim()||undefined;
+ $('dlg').close();EDT.cb()}
+function editQ(i){openEdit(Q[i],render)}
+// ----- mode admin -----
+const hp=p=>{let h=5381;const t='tof2|'+p+'|sharkart';for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))>>>0;return String(h)};
+function adminOff(){ADM=false;document.body.classList.remove('admin');$('adbtn').textContent='🔐 Mode Admin';$('bmgr').classList.add('hide');renderBank()}
+function adminToggle(){
+ if(ADM)return adminOff();
+ const h=lget('tof2_pin');
+ if(!h){const p=prompt('Belum ada PIN admin. Buat PIN baru (minimal 4 karakter):');if(p===null)return;if(p.length<4)return alert('PIN minimal 4 karakter.');lset('tof2_pin',hp(p));alert('PIN admin dibuat. Ingat baik-baik PIN ini!')}
+ else{const p=prompt('Masukkan PIN admin:');if(p===null)return;if(hp(p)!==h)return alert('PIN salah.')}
+ ADM=true;document.body.classList.add('admin');$('adbtn').textContent='🚪 Keluar Admin';renderBank();
 }
-$('fbank').onchange=async e=>{try{
- const d=JSON.parse(await e.target.files[0].text());let n=0;
- d.forEach(o=>{const q=o.soal||o.q,a=parseAns(o.jawaban??o.a),k=String(o.kelas??o.k??'Umum'),m=String(o.mapel??o.m??'Umum');
-  if(q&&a!==null&&!DB.some(x=>x.k===k&&x.m===m&&x.q===q)){DB.push({k,m,q:String(q),a});n++}});
+function changePin(){if(!ADM)return;const p=prompt('PIN admin baru (minimal 4 karakter):');if(p===null)return;if(p.length<4)return alert('PIN minimal 4 karakter.');lset('tof2_pin',hp(p));alert('PIN berhasil diubah.')}
+// ----- kelola bank (admin) -----
+function toggleMgr(){if(!ADM)return;$('bmgr').classList.toggle('hide');renderMgr()}
+function renderMgr(){const m=$('bmgr');if(!ADM||m.classList.contains('hide'))return;const f=filt();
+ m.innerHTML=f.length?f.map(x=>{const i=DB.indexOf(x);return `<div class="q-item"><b class="${x.a?'t':'f'}">${x.a?'BENAR':'SALAH'}</b><span>${esc(x.q)} <small>[Kls ${esc(x.k)} · ${esc(x.m)}${x.t?' · '+esc(x.t):''}]</small></span><button class="btn s" onclick="editBank(${i})">✏️</button><button class="btn r s" onclick="delBank(${i})">✕</button></div>`}).join(''):'<p class="hint">Tidak ada soal pada filter ini.</p>'}
+function editBank(i){if(!ADM)return;const x=DB[i];openEdit(x,()=>{x.k=x.k||'Umum';x.m=x.m||'Umum';x.t=x.t||'';persist();renderBank()})}
+function delBank(i){if(!ADM||!confirm('Hapus soal ini dari bank?'))return;DB.splice(i,1);persist();renderBank()}
+function delCat(i){if(!ADM)return;const r=CL[i];if(!confirm(`Hapus semua soal Kelas ${r[0]} - ${r[1]}${r[2]?' › '+r[2]:''} (${r[3]} soal) dari bank?`))return;
+ DB=DB.filter(x=>K(x)!==r.slice(0,3).join('||'));persist();renderBank()}
+function clearBank(){if(!ADM)return;if(!DB.length)return alert('Bank sudah kosong.');
+ if(prompt(`Ini akan menghapus SEMUA ${DB.length} soal di bank.\nKetik HAPUS untuk melanjutkan:`)!=='HAPUS')return;DB=[];persist();renderBank()}
+// ----- ekspor / impor seluruh bank (admin) -----
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function exportJSON(){if(!ADM)return;if(!DB.length)return alert('Bank masih kosong.');
+ dl(new Blob([JSON.stringify(DB.map(x=>({kelas:x.k,mapel:x.m,materi:x.t||'',soal:x.q,jawaban:x.a?'benar':'salah'})),null,1)],{type:'application/json'}),'tof2-bank-soal.json')}
+function exportXLSX(){if(!ADM)return;if(!DB.length)return alert('Bank masih kosong.');
+ if(typeof XLSX==='undefined')return alert('Library Excel belum termuat (butuh internet). Gunakan ekspor JSON.');
+ const wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Soal','Jawaban','Kelas','Mapel','Materi'],...DB.map(x=>[x.q,x.a?'benar':'salah',x.k,x.m,x.t||''])]),'Bank Soal');
+ XLSX.writeFile(wb,'tof2-bank-soal.xlsx')}
+$('fbank').onchange=async e=>{if(!ADM){e.target.value='';return}try{
+ const d=await readAny(e.target.files[0]);let n=0;
+ d.forEach(o=>{const q=o.soal||o.q,a=parseAns(o.jawaban??o.a);if(!q||a===null)return;
+  const it={k:String(o.kelas??o.k??'Umum'),m:String(o.mapel??o.m??'Umum'),t:String(o.materi??o.t??''),q:String(q),a};
+  if(!DB.some(x=>K(x)===K(it)&&x.q===it.q)){DB.push(it);n++}});
  persist();renderBank();alert(n+' soal diimpor ke bank.')}catch(x){alert('File bank tidak valid')}e.target.value=''};
 renderBank();
 render();
