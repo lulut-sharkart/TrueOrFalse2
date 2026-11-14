@@ -49,6 +49,9 @@ video{transform:scaleX(-1)}
 .playing h1,.playing .sub{display:none}.playing{padding:6px}
 #stage:fullscreen{max-width:none;aspect-ratio:auto;border-radius:0}
 .q-item small{color:#6b21a8;font-weight:700}
+.btn.big{width:100%;font-size:1.6rem;padding:18px;margin:6px 0}
+.mrow{display:flex;gap:8px;flex-wrap:wrap}.mrow .btn{flex:1}
+.pill2{display:inline-block;background:#ede9fe;border-radius:999px;padding:8px 20px;font-weight:800;font-size:1.1rem}
 .res{text-align:center}
 body:not(.admin) .adm{display:none!important}
 dialog{border:0;border-radius:20px;padding:18px;width:min(520px,92vw);box-shadow:0 20px 60px #0007}
@@ -63,9 +66,26 @@ footer{margin-top:auto;padding:14px;color:#fff;font-weight:700;text-align:center
 <div class="sub">True or False pakai Kamera — Kiri ✅ BENAR • Kanan ❌ SALAH</div>
 
 <!-- SETUP -->
-<div id="setup" class="card">
- <div style="text-align:right"><button class="btn s" id="adbtn" onclick="adminToggle()">🔐 Mode Admin</button></div>
- <h3>📚 1. Masukkan Soal (wajib)</h3>
+<div id="setup">
+<div id="menu" class="card" style="text-align:center">
+ <div class="pill2" id="mstat"></div>
+ <div class="row" style="margin:14px 0 0;text-align:left">
+  <div><label>🎓 Kelas</label><select id="mk" onchange="updMenu()"></select></div>
+  <div><label>📖 Mapel</label><select id="mm" onchange="updMenu()"></select></div>
+  <div><label>🧩 Materi</label><select id="mt" onchange="updMenu()"></select></div>
+ </div>
+ <div class="row" style="margin:10px 0 14px;text-align:left">
+  <div><label>⏱️ Waktu per soal (detik)</label><input type="number" id="stime" value="10" min="3" max="120"></div>
+  <div><label>🔢 Jumlah soal</label><input type="number" id="snum" value="10" min="1"></div>
+  <div><label>🔀 Acak soal</label><select id="shuf"><option value="1">Ya</option><option value="0">Tidak</option></select></div>
+ </div>
+ <button class="btn g big" onclick="start()">🚀 MULAI BERMAIN</button>
+ <div class="mrow"><button class="btn" onclick="showView('manage')">📚 Kelola Soal</button><button class="btn" onclick="$('help').showModal()">❓ Petunjuk</button><button class="btn" onclick="start(true)">⌨️ Tanpa Kamera</button></div>
+ <p class="hint" style="font-size:1rem">✅ Berdiri di <b>KIRI</b> = BENAR &nbsp;•&nbsp; ❌ Berdiri di <b>KANAN</b> = SALAH</p>
+</div>
+<div id="manage" class="card hide">
+ <div style="display:flex;justify-content:space-between;gap:8px"><button class="btn s" onclick="showView('menu')">⬅️ Menu</button><button class="btn s" id="adbtn" onclick="adminToggle()">🔐 Mode Admin</button></div>
+ <h3>📚 Kelola Soal</h3>
  <div class="tabs" id="tabs">
   <button class="tab on" data-t="manual">✍️ Manual</button>
   <button class="tab" data-t="json">🧾 File JSON</button>
@@ -124,16 +144,8 @@ footer{margin-top:auto;padding:14px;color:#fff;font-weight:700;text-align:center
   <button class="btn r s" onclick="clearBank()">🗑️ Hapus SEMUA bank</button>
   <div id="bmgr" class="hide" style="max-height:260px;overflow:auto;margin-top:8px"></div>
  </div>
- <hr style="margin:14px 0;border:1px dashed #c4b5fd">
- <h3>⚙️ 2. Pengaturan</h3>
- <div class="row">
-  <div><label>⏱️ Waktu per soal (detik)</label><input type="number" id="stime" value="10" min="3" max="120"></div>
-  <div><label>🔢 Jumlah soal main</label><input type="number" id="snum" value="10" min="1"></div>
-  <div><label>🔀 Acak soal</label><select id="shuf"><option value="1">Ya</option><option value="0">Tidak</option></select></div>
- </div>
- <p class="hint">Saat mulai: kamera menyala → <b>keluar dari layar</b> 3 detik untuk kalibrasi latar → masuk & berdiri di sisi kiri (BENAR) atau kanan (SALAH). Jawaban dikunci saat waktu habis.</p>
- <button class="btn g" style="width:100%;font-size:1.2rem" onclick="start()">🚀 MULAI BERMAIN</button>
- <button class="btn" style="width:100%" onclick="start(true)">⌨️ Mode Tanpa Kamera (tombol ← / →)</button>
+  <div style="text-align:center;margin-top:14px"><button class="btn g" style="width:100%" onclick="showView('menu')">✅ Selesai — Kembali ke Menu</button></div>
+</div>
 </div>
 
 <!-- GAME -->
@@ -153,6 +165,23 @@ footer{margin-top:auto;padding:14px;color:#fff;font-weight:700;text-align:center
 <!-- RESULT -->
 <div id="result" class="card res hide"></div>
 
+<dialog id="help">
+ <h2 style="color:#7c3aed">❓ Petunjuk Bermain</h2>
+ <div style="display:flex;gap:8px;margin:10px 0;text-align:center;font-weight:900;color:#fff">
+  <div style="flex:1;background:#22c55e;border-radius:14px;padding:12px">⬅️ KIRI<br>✅ BENAR</div>
+  <div style="flex:1;background:#ef4444;border-radius:14px;padding:12px">KANAN ➡️<br>❌ SALAH</div>
+ </div>
+ <ol style="padding-left:20px;line-height:1.6;font-size:.95rem">
+  <li><b>Pilih soal</b>: atur Kelas, Mapel, dan Materi di menu. Soal belum ada? Buka <i>Kelola Soal</i>.</li>
+  <li><b>Atur</b> waktu per soal dan jumlah soal.</li>
+  <li>Tekan <b>MULAI</b> dan izinkan akses kamera.</li>
+  <li><b>Kalibrasi</b>: saat hitung mundur "Keluar layar!", semua pemain keluar dari area kamera agar latar terekam.</li>
+  <li>Setelah "Masuk!", baca pernyataan di layar, lalu <b>berdiri di sisi KIRI</b> (benar) atau <b>KANAN</b> (salah).</li>
+  <li>Jawaban <b>dikunci saat waktu habis</b>. Benar +10 poin. Tidak berdiri di sisi mana pun = tidak menjawab.</li>
+ </ol>
+ <p class="hint">💡 Tips: ruangan terang, kamera diam (jangan digeser), jarak sekitar 1,5–2 meter, pakai <b>Layar Penuh</b> agar area lebih luas. Tanpa kamera: tombol <b>←</b> / <b>→</b> di keyboard.</p>
+ <div style="text-align:center"><button class="btn g" onclick="$('help').close()">Mengerti! 👍</button></div>
+</dialog>
 <dialog id="dlg">
  <h3>✏️ Edit Soal</h3>
  <label>Soal</label><textarea id="eq"></textarea>
@@ -181,8 +210,25 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
 function toggleList(force){const show=force!==undefined?force:$('list').classList.contains('hide');
  $('list').classList.toggle('hide',!show);$('lock').classList.toggle('hide',show);
  $('tg').textContent=show?'🙈 Sembunyikan Soal':'👁️ Tampilkan Soal'}
+function showView(v){$('menu').classList.toggle('hide',v!=='menu');$('manage').classList.toggle('hide',v!=='manage');
+ if(v==='menu'){toggleList(false);adminOff()}window.scrollTo(0,0)}
+function poolAll(){const seen=new Set(),o=[];[...Q,...DB].forEach(x=>{if(!seen.has(x.q)){seen.add(x.q);o.push(x)}});return o}
+function pool(){const fk=$('mk').value,fm=$('mm').value,ft=$('mt').value;
+ return poolAll().filter(x=>(fk==='*'||x.k===fk)&&(fm==='*'||x.m===fm)&&(ft==='*'||(ft==='-'?!x.t:x.t===ft)))}
+function updMenu(){
+ const A=poolAll(),mk=$('mk'),mm=$('mm'),mt=$('mt'),ck=mk.value||'*',cm=mm.value||'*',ct=mt.value||'*';
+ const ks=[...new Set(A.filter(x=>x.k).map(x=>x.k))].sort((a,b)=>ko(a)-ko(b));
+ mk.innerHTML='<option value="*">Semua kelas</option>'+opts(ks,'Kelas');mk.value=ks.includes(ck)?ck:'*';
+ const d1=A.filter(x=>mk.value==='*'||x.k===mk.value),ms=[...new Set(d1.filter(x=>x.m).map(x=>x.m))].sort();
+ mm.innerHTML='<option value="*">Semua mapel</option>'+opts(ms);mm.value=ms.includes(cm)?cm:'*';
+ const d2=d1.filter(x=>mm.value==='*'||x.m===mm.value),ts=[...new Set(d2.filter(x=>x.t).map(x=>x.t))].sort(),noT=d2.some(x=>!x.t)&&ts.length>0;
+ mt.innerHTML='<option value="*">Semua materi</option>'+opts(ts)+(noT?'<option value="-">(Tanpa materi)</option>':'');
+ mt.value=(ts.includes(ct)||(ct==='-'&&noT))?ct:'*';
+ const n=pool().length;$('snum').max=n||1;
+ $('mstat').innerHTML=n?`📝 Soal tersedia: <b>${n}</b>`:'⚠️ Belum ada soal — buka "Kelola Soal"';
+}
 function render(){
- $('cnt').textContent=Q.length;$('snum').max=Q.length||1;
+ updMenu();$('cnt').textContent=Q.length;
  $('list').innerHTML=Q.map((x,i)=>`<div class="q-item"><b class="${x.a?'t':'f'}">${x.a?'BENAR':'SALAH'}</b><span>${esc(x.q)} ${x.k||x.m||x.t?`<small>[${[x.k?'Kls '+esc(x.k):'',esc(x.m||''),esc(x.t||'')].filter(Boolean).join(' · ')}]</small>`:''}</span><button class="btn s" onclick="editQ(${i})">✏️</button><button class="btn r s" onclick="Q.splice(${i},1);render()">✕</button></div>`).join('');
 }
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -216,10 +262,10 @@ function importAI(){try{
 // ---------- GAME ----------
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function start(nocam){
- if(!Q.length)return alert('Masukkan soal terlebih dahulu!');
+ const P=pool();if(!P.length){alert('Belum ada soal pada pilihan ini. Tambahkan soal atau ubah pilihan Kelas/Mapel/Materi.');if(!poolAll().length)showView('manage');return}
  toggleList(false);adminOff();
- const n=Math.min(Math.max(1,+$('snum').value||10),Q.length);
- play=Q.slice();if($('shuf').value==='1')play.sort(()=>Math.random()-.5);play=play.slice(0,n);
+ const n=Math.min(Math.max(1,+$('snum').value||10),P.length);
+ play=P.slice();if($('shuf').value==='1')play.sort(()=>Math.random()-.5);play=play.slice(0,n);
  idx=0;score=0;cam=!nocam;
  document.body.classList.add('playing');$('setup').classList.add('hide');$('result').classList.add('hide');$('game').classList.remove('hide');
  $('vid').style.display=cam?'block':'none';$('stage').style.background=cam?'#111':'linear-gradient(135deg,#1e1b4b,#7c3aed)';
@@ -283,7 +329,7 @@ async function judge(q){
  if(state==='judge'){idx++;nextQ()}
 }
 function fs(){const s=$('stage');document.fullscreenElement?document.exitFullscreen():(s.requestFullscreen&&s.requestFullscreen())}
-function stopGame(){toggleList(false);state='idle';document.body.classList.remove('playing');if(document.fullscreenElement)document.exitFullscreen();clearInterval(timer);cancelAnimationFrame(raf);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+function stopGame(){showView('menu');state='idle';document.body.classList.remove('playing');if(document.fullscreenElement)document.exitFullscreen();clearInterval(timer);cancelAnimationFrame(raf);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
  $('game').classList.add('hide');$('qbox').classList.add('hide');$('setup').classList.remove('hide')}
 function finish(){
  const total=play.length*10,pct=Math.round(score/total*100);
@@ -291,7 +337,7 @@ function finish(){
  stopGame();$('setup').classList.add('hide');$('result').classList.remove('hide');
  $('result').innerHTML=`<div class="stars">${stars}</div><h2>Permainan Selesai!</h2><div class="big">${score} / ${total}</div><p>Akurasi ${pct}% — ${pct>=60?'Hebat sekali! 🎊':'Ayo coba lagi! 🔥'}</p>
  <button class="btn g" onclick="$('result').classList.add('hide');start(${!cam})">🔁 Main Lagi</button>
- <button class="btn" onclick="$('result').classList.add('hide');$('setup').classList.remove('hide')">🏠 Menu Soal</button>`;
+ <button class="btn" onclick="$('result').classList.add('hide');$('setup').classList.remove('hide')">🏠 Menu Utama</button>`;
 }
 
 // ---------- BANK SOAL (database lokal) + MODE ADMIN ----------
@@ -320,7 +366,7 @@ function renderBank(){
  const c={};filt().forEach(x=>{c[K(x)]=(c[K(x)]||0)+1});
  CL=Object.entries(c).map(([k,n])=>[...k.split('||'),n]).sort((a,b)=>ko(a[0])-ko(b[0])||a[1].localeCompare(b[1])||a[2].localeCompare(b[2]));
  $('bank').innerHTML=CL.length?CL.map((r,i)=>`<div class="q-item"><b class="t">Kelas ${esc(r[0])}</b><span>${esc(r[1])}${r[2]?' › '+esc(r[2]):''} — ${r[3]} soal</span>${ADM?`<button class="btn r s" onclick="delCat(${i})">🗑️</button>`:''}</div>`).join(''):'<p class="hint">Bank masih kosong / tidak ada hasil. Tambahkan soal lalu klik "Simpan daftar soal ke Bank".</p>';
- renderMgr();
+ renderMgr();updMenu();
 }
 function saveBank(){
  if(!Q.length)return alert('Daftar soal masih kosong.');
